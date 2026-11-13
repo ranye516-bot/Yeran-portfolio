@@ -2,7 +2,12 @@ export const media = (file) => `${import.meta.env.BASE_URL}media/${file}`
 
 export const experience = [
   {
-    period: '2024.10 —',
+    period: '2026.03 — 至今',
+    company: '杭州青禾世相有限公司',
+    description: '在品牌部负责产品与艺人拍摄，为品牌宣传提供产品影像和人物素材。',
+  },
+  {
+    period: '2024.10 — 2026.02',
     company: '浙江耶气满满科技有限公司',
     description: '拍摄品牌视频、电商产品视频和信息流短片。',
   },
@@ -10,11 +15,6 @@ export const experience = [
     period: '2021.07 — 2024.08',
     company: '杭州妙当家科技有限公司',
     description: '参与商业广告的创意与脚本，协调置景、布光和拍摄，并参与剪辑与调色。',
-  },
-  {
-    period: '2020.05 — 2021.06',
-    company: '杭州天道视觉摄影工作室',
-    description: '参与美丽乡村宣传片、活动摄影与短视频拍摄。',
   },
 ]
 
