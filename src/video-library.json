@@ -1,0 +1,184 @@
+[
+  {
+    "id": "manhaojia-t-series",
+    "title": "曼好家 · T 系列烤漆",
+    "category": "空间影像",
+    "duration": "01:04",
+    "portrait": false,
+    "coverAspect": 1.77778
+  },
+  {
+    "id": "zojirushi-ep-pzh",
+    "title": "象印 · EP-PZH 烧烤火锅两用电锅",
+    "category": "产品影像",
+    "duration": "00:48",
+    "portrait": false,
+    "coverAspect": 1.77778
+  },
+  {
+    "id": "happycall-pizza",
+    "title": "HAPPYCALL · 烤披萨",
+    "category": "美食影像",
+    "duration": "00:50",
+    "portrait": false,
+    "coverAspect": 1.77778
+  },
+  {
+    "id": "happycall-scallops",
+    "title": "HAPPYCALL · 干巴露扇贝",
+    "category": "美食影像",
+    "duration": "00:37",
+    "portrait": false,
+    "coverAspect": 1.77778
+  },
+  {
+    "id": "thai-origin",
+    "title": "耶气满满 · 泰国溯源片",
+    "category": "品牌纪实",
+    "duration": "02:07",
+    "portrait": false,
+    "coverAspect": 1.77778
+  },
+  {
+    "id": "yiyuan-autumn",
+    "title": "一原得物 · 金边花鸟",
+    "category": "品牌广告",
+    "duration": "00:47",
+    "portrait": false,
+    "count": 4,
+    "coverAspect": 1.77778
+  },
+  {
+    "id": "zojirushi-moon",
+    "title": "象印 · 星月杯",
+    "category": "产品影像",
+    "duration": "00:39",
+    "portrait": false,
+    "coverAspect": 1.77778
+  },
+  {
+    "id": "space-showroom",
+    "title": "空间影像 01",
+    "category": "空间影像",
+    "duration": "01:29",
+    "portrait": false,
+    "coverAspect": 1.7762
+  },
+  {
+    "id": "happycall-sandwich",
+    "title": "HAPPYCALL · 三明治",
+    "category": "美食影像",
+    "duration": "00:42",
+    "portrait": false,
+    "coverAspect": 1.77778
+  },
+  {
+    "id": "beauty",
+    "title": "Marlab · 真丝洗衣液",
+    "category": "产品影像",
+    "duration": "00:25",
+    "portrait": true,
+    "count": 4,
+    "coverAspect": 0.75
+  },
+  {
+    "id": "fresh-grains",
+    "title": "鲜伴鲜 · 全谷杂粮饭",
+    "category": "产品影像",
+    "duration": "00:44",
+    "portrait": true,
+    "coverAspect": 0.75
+  },
+  {
+    "id": "zojirushi-flask",
+    "title": "象印 · SU-AB36 / 48 保温杯",
+    "category": "产品主图",
+    "duration": "00:41",
+    "portrait": false,
+    "coverAspect": 1.77778
+  },
+  {
+    "id": "space-interior",
+    "title": "曼好家 · 高定空间",
+    "category": "空间影像",
+    "duration": "01:50",
+    "portrait": false,
+    "count": 4,
+    "coverAspect": 1.77778
+  },
+  {
+    "id": "zojirushi-stop-motion",
+    "title": "象印 · SQ-DA30E 定格短片",
+    "category": "定格影像",
+    "duration": "00:36",
+    "portrait": true,
+    "coverAspect": 0.5619
+  },
+  {
+    "id": "sports-product",
+    "title": "象印 · 运动款保温杯",
+    "category": "产品主图",
+    "duration": "00:25",
+    "portrait": false,
+    "count": 5,
+    "coverAspect": 1.77778
+  },
+  {
+    "id": "kitchen-product",
+    "title": "HAPPYCALL · 松木筷",
+    "category": "产品主图",
+    "duration": "00:50",
+    "portrait": false,
+    "coverAspect": 1.77778
+  },
+  {
+    "id": "zojirushi-moon-black",
+    "title": "象印 · 星月杯黑色款",
+    "category": "产品主图",
+    "duration": "00:21",
+    "portrait": true,
+    "count": 4,
+    "coverAspect": 0.75
+  },
+  {
+    "id": "apparel",
+    "title": "KK树 · 服装短片",
+    "category": "产品影像",
+    "duration": "00:30",
+    "portrait": true,
+    "coverAspect": 0.75
+  },
+  {
+    "id": "product-demo",
+    "title": "飞剑 · 养生壶",
+    "category": "产品影像",
+    "duration": "01:00",
+    "portrait": false,
+    "count": 4,
+    "coverAspect": 1.77778
+  },
+  {
+    "id": "presenter",
+    "title": "产品口播短片",
+    "category": "短视频",
+    "duration": "00:29",
+    "portrait": true,
+    "coverAspect": 0.5619
+  },
+  {
+    "id": "food-product",
+    "title": "食品产品短片",
+    "category": "美食影像",
+    "duration": "00:26",
+    "portrait": true,
+    "coverAspect": 0.5619
+  },
+  {
+    "id": "food-02",
+    "title": "食品影像 02",
+    "category": "美食影像",
+    "duration": "00:30",
+    "portrait": true,
+    "coverAspect": 0.5619
+  }
+]

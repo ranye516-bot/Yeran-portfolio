@@ -1,0 +1,39 @@
+.profile-card { position: relative; perspective: 1100px; max-width: 560px; }
+.profile-card__frame {
+  position: relative;
+  padding: 8px;
+  border-radius: 21px;
+  border: 1px solid #c6d9bc52;
+  background: linear-gradient(155deg, #333c31, #191f1a 53%, #293328);
+  box-shadow: 0 22px 46px #02050380, inset 0 1px #e4efde22;
+  transform: rotateX(var(--pc-tilt-x, 0deg)) rotateY(var(--pc-tilt-y, 0deg));
+  transition: transform .55s cubic-bezier(.22, 1, .36, 1), border-color .55s ease;
+}
+.profile-card__image { position: relative; isolation: isolate; overflow: hidden; border-radius: 15px; background: #292f29; }
+.profile-card__image img { width: 100%; height: auto; translate: var(--pc-shift-x, 0px) var(--pc-shift-y, 0px); transition: translate .55s cubic-bezier(.22, 1, .36, 1); }
+.profile-card__glare { position: absolute; inset: 0; pointer-events: none; opacity: .12; mix-blend-mode: screen; background: radial-gradient(ellipse at var(--pc-x, 50%) var(--pc-y, 50%), #eaf2c9aa, #90baae20 38%, transparent 66%); transition: opacity .5s ease; }
+.profile-card__info {
+  position: absolute;
+  inset: auto 17px 17px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 11px 11px 15px;
+  border: 1px solid #e2eede50;
+  border-radius: 12px;
+  background: #141a17be;
+  backdrop-filter: blur(13px);
+}
+.profile-card__info div { display: grid; gap: 4px; }
+.profile-card__info strong { font: 600 19px/1 var(--display); letter-spacing: .12em; }
+.profile-card__info span { font-size: 11px; color: #ccd7ca; }
+.profile-card__contact { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #cbe8cc55; border-radius: 50%; }
+.profile-card__contact:hover { color: var(--accent); border-color: var(--accent); }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .profile-card:hover .profile-card__frame { border-color: #c6e0c381; }
+  .profile-card:hover .profile-card__glare { opacity: .66; }
+}
+@media (max-width: 640px) {
+  .profile-card { max-width: 340px; }
+}

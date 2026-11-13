@@ -1,0 +1,92 @@
+.drift-wall {
+  position: relative;
+  height: clamp(490px, 74svh, 770px);
+  overflow: clip;
+  perspective: 1180px;
+  mask-image: radial-gradient(ellipse 77% 71% at 50% 49%, #000 49%, transparent 100%);
+}
+
+.drift-wall__plane {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 124%;
+  display: flex;
+  transform: translate(-50%, -50%) scale(1.12) rotateX(14deg) rotateY(-13deg) translateZ(-70px);
+  transform-style: preserve-3d;
+}
+
+.drift-wall__col { width: calc(var(--dw-width) + var(--dw-gap)); transform-style: preserve-3d; }
+.drift-wall__track { position: relative; transform-style: preserve-3d; }
+.drift-wall__plane, .drift-wall__col, .drift-wall__track { pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .drift-wall[data-visible='true'] .drift-wall__col { animation: drift-column-in .68s cubic-bezier(.22, 1, .36, 1) var(--dw-delay) backwards; }
+}
+@keyframes drift-column-in { from { opacity: 0; } to { opacity: 1; } }
+.drift-wall__tile {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: calc(var(--dw-height) + var(--dw-gap));
+  border: 0;
+  padding: 0;
+  background: none;
+  transform-style: preserve-3d;
+  pointer-events: auto;
+}
+
+.drift-wall__inner {
+  position: absolute;
+  display: block;
+  inset: calc(var(--dw-gap) / 2);
+  border: 1px solid #c9ddc944;
+  border-radius: clamp(6px, 1.2vw, 14px);
+  overflow: hidden;
+  background: #171c18;
+  opacity: .73;
+  transform: translateZ(0);
+  pointer-events: none;
+  transition: opacity .5s ease, border-color .4s ease, box-shadow .4s ease;
+}
+
+.drift-wall__tile img { width: 100%; height: 100%; object-fit: cover; user-select: none; filter: saturate(.40); transition: filter .4s ease; }
+.drift-wall__tile:hover img, .drift-wall__tile:focus-visible img { filter: none; }
+.drift-wall__tile[data-portrait="true"] img { object-fit: contain; }
+.drift-wall__overlay { position: absolute; inset: 0; background: #0b120c2e; transition: opacity .44s ease; }
+.drift-wall__label { position: absolute; display: none; inset: auto 0 0; padding: 15px 10px 7px; background: linear-gradient(transparent, #080c09e8); color: var(--paper); text-align: left; font-size: 12px; line-height: 1.35; }
+.drift-wall__tile:hover .drift-wall__inner, .drift-wall__tile:focus-visible .drift-wall__inner {
+  opacity: 1;
+  border-color: #e5efdbad;
+  box-shadow: 0 20px 36px #03050487;
+}
+.drift-wall__tile:hover .drift-wall__overlay, .drift-wall__tile:focus-visible .drift-wall__overlay { opacity: 0; }
+.drift-wall__tile:focus-visible { outline-offset: -4px; }
+.drift-wall__footer { display: flex; align-items: center; gap: 14px; min-height: 58px; padding-top: 15px; border-top: 1px solid #c4d4bd37; color: var(--muted); font-size: 13px; }
+.drift-wall__footer .mono { color: var(--accent); font-size: 11px; white-space: nowrap; }
+.drift-wall__footer button { margin-left: auto; min-height: 41px; border-radius: 99px; }
+.drift-wall__preview { min-width: 0; }
+.drift-wall__preview strong { display: block; color: var(--paper); font-size: 14px; line-height: 1.45; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drift-wall__preview span { display: block; font-size: 11px; line-height: 1.4; }
+
+.drift-wall--static { height: auto; mask-image: none; }
+.drift-wall__static { display: grid; grid-template-columns: repeat(var(--dw-columns), minmax(0, 1fr)); gap: var(--dw-gap); padding-block: 12px 21px; }
+.drift-wall__static .drift-wall__tile { height: auto; aspect-ratio: 3 / 2; }
+.drift-wall__static .drift-wall__inner { inset: 0; opacity: 1; transform: none; }
+.drift-wall__static .drift-wall__overlay { opacity: 0; }
+.drift-wall__static img { filter: none; }
+.drift-wall__static .drift-wall__label { display: block; }
+
+@media (hover: none) {
+  .drift-wall__label { display: block; }
+}
+
+@media (max-width: 640px) {
+  .drift-wall { height: clamp(345px, 102vw, 480px); }
+  .drift-wall__plane {
+    transform: translate(-50%, -50%) scale(1.14) rotateX(11deg) rotateY(-8deg) translateZ(-35px);
+  }
+  .drift-wall--static { height: auto; }
+  .drift-wall__static { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .drift-wall__footer { font-size: 11px; gap: 8px; }
+  .drift-wall__footer button { padding-inline: 11px; min-height: 44px; }
+}
