@@ -1,12 +1,11 @@
 import { useLayoutEffect } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { media } from './content'
 
 gsap.registerPlugin(ScrollTrigger)
 
 function revealHero(curtain, onComplete) {
-  const handoff = gsap.timeline({ defaults: { ease: 'power3.out' }, onComplete })
+  const handoff = gsap.timeline({ defaults: { ease: 'power3.out' } })
   handoff
     .to(curtain, { autoAlpha: 0, duration: 0.47 }, 0)
     .from('.hero-media > img', { scale: 1.05, duration: 0.94 }, 0)
@@ -18,6 +17,7 @@ function revealHero(curtain, onComplete) {
     .fromTo('.hero-byline', { y: 31, clipPath: 'inset(0 0 100% 0)' },
       { y: 0, clipPath: 'inset(0 0 0% 0)', duration: 0.61, clearProps: 'clipPath' }, 0.30)
     .from('.hero-footer', { y: 20, autoAlpha: 0, duration: 0.51 }, 0.38)
+    .call(onComplete, [], 0.47)
 
   return handoff
 }
@@ -28,22 +28,28 @@ export function useSiteOpening(setOpening) {
     const root = document.getElementById('root')
     const clip = curtain.querySelector('.opening-clip')
     const progress = curtain.querySelector('.opening-progress')
+    const track = progress.parentElement
+    const percentage = curtain.querySelector('.opening-percentage')
     const message = curtain.querySelector('.opening-message')
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)')
     const startsAtHero = window.scrollY < 35 && ['', '#top'].includes(window.location.hash)
     const animate = startsAtHero && !preference.matches
     const poster = document.querySelector('.hero-media > img')
-    const heroVideo = document.querySelector('.hero-media > video')
-    const pending = new Set(startsAtHero ? [poster, heroVideo].filter(Boolean) : [])
-    if (animate) pending.add(clip)
-    const total = pending.size + 1 // The React page is already mounted.
+    const video = startsAtHero ? document.querySelector('.hero-media > video') : null
     const listeners = new AbortController()
     const options = { signal: listeners.signal }
-    let deadline
+    let posterTimeout
+    let videoTimeout
     let cameraTimeout
     let progressTween
     let handoff
     let finishing = false
+    let posterReady = !startsAtHero || poster.complete
+    let videoReady = !video
+    let buffered = 0
+    let usingPoster = false
+    let cameraDone = !animate
+    let cameraBuffering = animate
 
     function unlock() {
       curtain.hidden = true
@@ -62,20 +68,32 @@ export function useSiteOpening(setOpening) {
 
     function update() {
       if (finishing) return
-      if (pending.size) {
+      const ready = posterReady && videoReady
+      const value = ready ? 1 : 0.10 + (posterReady ? 0.15 : 0) + 0.75 * (videoReady ? 1 : buffered)
+      const percent = ready ? 100 : Math.min(99, Math.floor(value * 100))
+      if (track.getAttribute('aria-valuenow') !== String(percent)) {
+        track.setAttribute('aria-valuenow', percent)
+        percentage.textContent = `${percent}%`
+      }
+      if (!ready || !cameraDone) {
         progressTween = gsap.to(progress, {
-          scaleX: (total - pending.size) / total, duration: 0.22, ease: 'none', overwrite: true,
+          scaleX: value, duration: 0.2, ease: 'none', overwrite: true,
         })
+        const status = !posterReady ? '正在载入首页封面'
+          : !videoReady ? '正在缓冲首页视频'
+          : cameraBuffering ? '首页已就绪，正在缓冲开场' : '首页已就绪，正在播放开场'
+        if (message.textContent !== status) message.textContent = status
         return
       }
       finishing = true
-      clearTimeout(deadline)
+      clearTimeout(posterTimeout)
+      clearTimeout(videoTimeout)
       clearTimeout(cameraTimeout)
       listeners.abort()
-      message.textContent = '载入完成'
+      message.textContent = usingPoster ? '即将进入，视频继续缓冲' : '载入完成'
       if (animate && !preference.matches && !document.hidden) {
         progressTween = gsap.to(progress, {
-          scaleX: 1, duration: 0.22, ease: 'none', overwrite: true, onComplete: enter,
+          scaleX: 1, duration: 0.18, ease: 'none', overwrite: true, onComplete: enter,
         })
       } else {
         progressTween?.kill()
@@ -84,59 +102,89 @@ export function useSiteOpening(setOpening) {
       }
     }
 
-    function settle(asset) {
-      if (pending.delete(asset)) update()
+    function finishPoster() {
+      clearTimeout(posterTimeout)
+      posterReady = true
+      update()
     }
 
-    function watch(asset, event, ready) {
-      if (!pending.has(asset)) return
-      const settled = () => settle(asset)
-      asset.addEventListener(event, settled, options)
-      asset.addEventListener('error', settled, options)
-      if (ready()) settled()
+    function checkBuffer() {
+      if (videoReady) return
+      const target = Math.min(1.25, video.duration || 1.25)
+      const initialSeconds = video.buffered.length && video.buffered.start(0) < 0.05 ? video.buffered.end(0) : 0
+      buffered = Math.max(buffered, Math.min(0.99, initialSeconds / target))
+      if (video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA && initialSeconds >= target) {
+        videoReady = true
+        clearTimeout(videoTimeout)
+      }
+      update()
+    }
+
+    function usePoster() {
+      if (videoReady) return
+      clearTimeout(videoTimeout)
+      usingPoster = true
+      videoReady = true
+      update()
+    }
+
+    function finishCamera() {
+      if (cameraDone) return
+      clearTimeout(cameraTimeout)
+      clip.pause()
+      cameraDone = true
+      update()
+    }
+
+    if (!posterReady) {
+      poster.addEventListener('load', finishPoster, options)
+      poster.addEventListener('error', finishPoster, options)
+      posterTimeout = window.setTimeout(finishPoster, 2000)
+    }
+
+    if (video) {
+      for (const event of ['loadeddata', 'progress', 'canplay', 'canplaythrough']) {
+        video.addEventListener(event, checkBuffer, options)
+      }
+      video.addEventListener('error', usePoster, options)
+      videoTimeout = window.setTimeout(usePoster, 5500)
+      if (video.error) usePoster()
+      else checkBuffer()
     }
 
     if (animate) {
-      const finishCamera = () => {
-        clearTimeout(cameraTimeout)
-        clip.pause()
-        settle(clip)
-      }
       const waitForCamera = () => {
-        if (!pending.has(clip)) return
+        if (cameraDone) return
+        cameraBuffering = true
+        update()
         clearTimeout(cameraTimeout)
-        cameraTimeout = window.setTimeout(finishCamera, 12000)
+        cameraTimeout = window.setTimeout(finishCamera, 5000)
       }
       clip.addEventListener('waiting', waitForCamera, options)
-      clip.addEventListener('playing', () => clearTimeout(cameraTimeout), options)
+      clip.addEventListener('playing', () => {
+        clearTimeout(cameraTimeout)
+        cameraBuffering = false
+        update()
+      }, options)
       clip.addEventListener('ended', finishCamera, options)
       clip.addEventListener('error', finishCamera, options)
       waitForCamera()
-      clip.src = media('intro-camera.mp4')
+      if (!clip.hasAttribute('src')) clip.src = clip.dataset.src
       clip.play().catch(finishCamera)
     }
 
     preference.addEventListener('change', () => {
-      if (!preference.matches) return
-      clip.pause()
-      clearTimeout(cameraTimeout)
-      pending.delete(clip)
-      pending.delete(heroVideo)
-      update()
+      if (preference.matches) {
+        usePoster()
+        finishCamera()
+      }
     }, options)
 
-    // Keep the poster available as a fallback when a first frame takes too long.
-    deadline = window.setTimeout(() => {
-      pending.delete(poster)
-      pending.delete(heroVideo)
-      update()
-    }, 12000)
-    watch(poster, 'load', () => poster.complete)
-    watch(heroVideo, 'loadeddata', () => heroVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA || heroVideo.error)
     update()
 
     return () => {
-      clearTimeout(deadline)
+      clearTimeout(posterTimeout)
+      clearTimeout(videoTimeout)
       clearTimeout(cameraTimeout)
       listeners.abort()
       progressTween?.kill()
