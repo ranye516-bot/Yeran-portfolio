@@ -43,7 +43,6 @@ const icons = {
   close: <path d="m6 6 12 12M18 6 6 18" />,
   play: <path d="m9 5 11 7-11 7z" />,
   pause: <path d="M9 5v14m6-14v14" />,
-  copy: <><rect x="8" y="8" width="12" height="12" rx="1" /><path d="M16 8V4H4v12h4" /></>,
 }
 
 function Icon({ name, className }) {
@@ -698,17 +697,6 @@ function VideoLibrary() {
 }
 
 function Contact() {
-  const [copyStatus, setCopyStatus] = useState('')
-
-  async function copyWeChat() {
-    try {
-      await navigator.clipboard.writeText(contact.wechat)
-      setCopyStatus('微信号已复制')
-    } catch {
-      setCopyStatus('请选中上方微信号手动复制')
-    }
-  }
-
   return (
     <footer id="contact" className="contact" data-motion-section>
       <div className="contact-light" aria-hidden="true" />
@@ -724,11 +712,10 @@ function Contact() {
               <dd><a href={`mailto:${contact.secondaryEmail}`}>{contact.secondaryEmail}</a></dd>
               <dd><a href={`mailto:${contact.email}`}>{contact.email}</a></dd>
             </div>
-            <div><dt className="mono">电话 / PHONE</dt><dd><a href={`tel:+86${contact.phone}`}>{contact.phone}</a></dd></div>
+            <div><dt className="mono">电话 / PHONE</dt><dd>{contact.phone}</dd></div>
             <div>
               <dt className="mono">微信 / WECHAT</dt>
-              <dd>{contact.wechat} <button className="copy-button" type="button" onClick={copyWeChat} aria-label="复制微信号" title="复制微信号"><Icon name="copy" /></button></dd>
-              <dd className="copy-status" aria-live="polite">{copyStatus}</dd>
+              <dd>{contact.wechat}</dd>
             </div>
           </dl>
         </div>
