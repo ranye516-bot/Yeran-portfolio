@@ -30,7 +30,6 @@ export function useSiteOpening(setOpening) {
     const progress = curtain.querySelector('.opening-progress')
     const track = progress.parentElement
     const percentage = curtain.querySelector('.opening-percentage')
-    const message = curtain.querySelector('.opening-message')
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)')
     const startsAtHero = window.scrollY < 35 && ['', '#top'].includes(window.location.hash)
     const animate = startsAtHero && !preference.matches
@@ -47,9 +46,7 @@ export function useSiteOpening(setOpening) {
     let posterReady = !startsAtHero || poster.complete
     let videoReady = !video
     let buffered = 0
-    let usingPoster = false
     let cameraDone = !animate
-    let cameraBuffering = animate
 
     function unlock() {
       curtain.hidden = true
@@ -79,10 +76,6 @@ export function useSiteOpening(setOpening) {
         progressTween = gsap.to(progress, {
           scaleX: value, duration: 0.2, ease: 'none', overwrite: true,
         })
-        const status = !posterReady ? '正在载入首页封面'
-          : !videoReady ? '正在缓冲首页视频'
-          : cameraBuffering ? '首页已就绪，正在缓冲开场' : '首页已就绪，正在播放开场'
-        if (message.textContent !== status) message.textContent = status
         return
       }
       finishing = true
@@ -90,7 +83,6 @@ export function useSiteOpening(setOpening) {
       clearTimeout(videoTimeout)
       clearTimeout(cameraTimeout)
       listeners.abort()
-      message.textContent = usingPoster ? '即将进入，视频继续缓冲' : '载入完成'
       if (animate && !preference.matches && !document.hidden) {
         progressTween = gsap.to(progress, {
           scaleX: 1, duration: 0.18, ease: 'none', overwrite: true, onComplete: enter,
@@ -123,7 +115,6 @@ export function useSiteOpening(setOpening) {
     function usePoster() {
       if (videoReady) return
       clearTimeout(videoTimeout)
-      usingPoster = true
       videoReady = true
       update()
     }
@@ -155,17 +146,11 @@ export function useSiteOpening(setOpening) {
     if (animate) {
       const waitForCamera = () => {
         if (cameraDone) return
-        cameraBuffering = true
-        update()
         clearTimeout(cameraTimeout)
         cameraTimeout = window.setTimeout(finishCamera, 5000)
       }
       clip.addEventListener('waiting', waitForCamera, options)
-      clip.addEventListener('playing', () => {
-        clearTimeout(cameraTimeout)
-        cameraBuffering = false
-        update()
-      }, options)
+      clip.addEventListener('playing', () => clearTimeout(cameraTimeout), options)
       clip.addEventListener('ended', finishCamera, options)
       clip.addEventListener('error', finishCamera, options)
       waitForCamera()
