@@ -90,7 +90,7 @@ figure, dl, dd, p, h1, h2, h3 { margin: 0; }
 }
 .opening-status { display: grid; justify-items: center; gap: 12px; color: #b4c0b5; font-size: 11px; letter-spacing: .2em; }
 .opening-track { width: clamp(92px, 13vw, 140px); height: 1px; background: #37443a; }
-.opening-progress { display: block; height: 100%; transform: scaleX(0); transform-origin: left; transition: transform .22s linear; background: #d2e0d0; }
+.opening-progress { display: block; height: 100%; transform: scaleX(0); transform-origin: left; background: #d2e0d0; }
 .hero-body, .hero-footer { position: relative; z-index: 1; }
 .motion-mask { overflow: hidden; }
 .display-heading {

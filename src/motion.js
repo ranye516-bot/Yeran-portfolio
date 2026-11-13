@@ -35,14 +35,15 @@ export function useSiteOpening(setOpening) {
     const poster = document.querySelector('.hero-media > img')
     const heroVideo = document.querySelector('.hero-media > video')
     const pending = new Set(startsAtHero ? [poster, heroVideo].filter(Boolean) : [])
+    if (animate) pending.add(clip)
     const total = pending.size + 1 // The React page is already mounted.
     const listeners = new AbortController()
     const options = { signal: listeners.signal }
     let deadline
-    let cameraGrace
+    let cameraTimeout
+    let progressTween
     let handoff
-    let entering = false
-    let cameraPlaying = false
+    let finishing = false
 
     function unlock() {
       curtain.hidden = true
@@ -55,58 +56,90 @@ export function useSiteOpening(setOpening) {
     }
 
     function enter() {
-      if (entering) return
-      entering = true
-      clearTimeout(deadline)
-      clearTimeout(cameraGrace)
-      listeners.abort()
-      clip.pause()
       if (animate && !preference.matches && !document.hidden) handoff = revealHero(curtain, unlock)
       else unlock()
     }
 
     function update() {
-      progress.style.transform = `scaleX(${(total - pending.size) / total})`
-      if (pending.size) return
+      if (finishing) return
+      if (pending.size) {
+        progressTween = gsap.to(progress, {
+          scaleX: (total - pending.size) / total, duration: 0.22, ease: 'none', overwrite: true,
+        })
+        return
+      }
+      finishing = true
       clearTimeout(deadline)
+      clearTimeout(cameraTimeout)
+      listeners.abort()
       message.textContent = '载入完成'
-      if (cameraPlaying && !clip.ended) cameraGrace = window.setTimeout(enter, 900)
-      else enter()
+      if (animate && !preference.matches && !document.hidden) {
+        progressTween = gsap.to(progress, {
+          scaleX: 1, duration: 0.22, ease: 'none', overwrite: true, onComplete: enter,
+        })
+      } else {
+        progressTween?.kill()
+        gsap.set(progress, { scaleX: 1 })
+        enter()
+      }
+    }
+
+    function settle(asset) {
+      if (pending.delete(asset)) update()
     }
 
     function watch(asset, event, ready) {
       if (!pending.has(asset)) return
-      const settled = () => {
-        if (pending.delete(asset)) update()
-      }
+      const settled = () => settle(asset)
       asset.addEventListener(event, settled, options)
       asset.addEventListener('error', settled, options)
       if (ready()) settled()
     }
 
     if (animate) {
-      clip.addEventListener('playing', () => { cameraPlaying = true }, options)
-      clip.addEventListener('ended', () => { if (!pending.size) enter() }, options)
+      const finishCamera = () => {
+        clearTimeout(cameraTimeout)
+        clip.pause()
+        settle(clip)
+      }
+      const waitForCamera = () => {
+        if (!pending.has(clip)) return
+        clearTimeout(cameraTimeout)
+        cameraTimeout = window.setTimeout(finishCamera, 12000)
+      }
+      clip.addEventListener('waiting', waitForCamera, options)
+      clip.addEventListener('playing', () => clearTimeout(cameraTimeout), options)
+      clip.addEventListener('ended', finishCamera, options)
+      clip.addEventListener('error', finishCamera, options)
+      waitForCamera()
       clip.src = media('intro-camera.mp4')
-      clip.play().catch(() => {})
+      clip.play().catch(finishCamera)
     }
 
     preference.addEventListener('change', () => {
       if (!preference.matches) return
       clip.pause()
-      if (pending.delete(heroVideo)) update()
+      clearTimeout(cameraTimeout)
+      pending.delete(clip)
+      pending.delete(heroVideo)
+      update()
     }, options)
 
     // Keep the poster available as a fallback when a first frame takes too long.
-    deadline = window.setTimeout(enter, 6000)
+    deadline = window.setTimeout(() => {
+      pending.delete(poster)
+      pending.delete(heroVideo)
+      update()
+    }, 12000)
     watch(poster, 'load', () => poster.complete)
     watch(heroVideo, 'loadeddata', () => heroVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA || heroVideo.error)
-    if (!entering) update()
+    update()
 
     return () => {
       clearTimeout(deadline)
-      clearTimeout(cameraGrace)
+      clearTimeout(cameraTimeout)
       listeners.abort()
+      progressTween?.kill()
       handoff?.kill()
     }
   }, [setOpening])
