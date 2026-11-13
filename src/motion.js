@@ -1,21 +1,14 @@
 import { useLayoutEffect } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { media } from './content'
 
 gsap.registerPlugin(ScrollTrigger)
 
-function openHero() {
-  const hero = document.getElementById('top')
-  const curtain = document.querySelector('.opening-curtain')
-  const clip = curtain.querySelector('.opening-clip')
-  const progress = curtain.querySelector('.opening-progress')
-  hero.dataset.opening = 'true'
-  gsap.set(curtain, { autoAlpha: 1 })
-  gsap.from('.opening-name, .opening-status', { y: 7, opacity: 0, duration: 0.52, ease: 'power3.out' })
-
-  const handoff = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } })
+function revealHero(curtain, onComplete) {
+  const handoff = gsap.timeline({ defaults: { ease: 'power3.out' }, onComplete })
   handoff
-    .to(curtain, { autoAlpha: 0, duration: 0.47, clearProps: 'opacity,visibility' }, 0)
+    .to(curtain, { autoAlpha: 0, duration: 0.47 }, 0)
     .from('.hero-media > img', { scale: 1.05, duration: 0.94 }, 0)
     .from('.hero-label', { yPercent: 120, duration: 0.58 }, 0.06)
     .from('.hero h1', { yPercent: 106, duration: 0.76 }, 0.12)
@@ -26,58 +19,97 @@ function openHero() {
       { y: 0, clipPath: 'inset(0 0 0% 0)', duration: 0.61, clearProps: 'clipPath' }, 0.30)
     .from('.hero-footer', { y: 20, autoAlpha: 0, duration: 0.51 }, 0.38)
 
-  let finished = false
-  const timeout = window.setTimeout(finish, 7000)
-  const startupTimeout = window.setTimeout(finish, 2300)
-  const started = () => window.clearTimeout(startupTimeout)
+  return handoff
+}
 
-  function updateProgress() {
-    if (Number.isFinite(clip.duration) && clip.duration > 0) {
-      progress.style.transform = `scaleX(${Math.min(1, clip.currentTime / clip.duration)})`
+export function useSiteOpening(setOpening) {
+  useLayoutEffect(() => {
+    const curtain = document.getElementById('site-opening')
+    const root = document.getElementById('root')
+    const clip = curtain.querySelector('.opening-clip')
+    const progress = curtain.querySelector('.opening-progress')
+    const message = curtain.querySelector('.opening-message')
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const startsAtHero = window.scrollY < 35 && ['', '#top'].includes(window.location.hash)
+    const animate = startsAtHero && !preference.matches
+    const poster = document.querySelector('.hero-media > img')
+    const heroVideo = document.querySelector('.hero-media > video')
+    const pending = new Set(startsAtHero ? [poster, heroVideo].filter(Boolean) : [])
+    const total = pending.size + 1 // The React page is already mounted.
+    const listeners = new AbortController()
+    const options = { signal: listeners.signal }
+    let deadline
+    let cameraGrace
+    let handoff
+    let entering = false
+    let cameraPlaying = false
+
+    function unlock() {
+      curtain.hidden = true
+      clip.removeAttribute('src')
+      clip.load()
+      root.inert = false
+      document.documentElement.classList.remove('site-loading')
+      setOpening(false)
+      ScrollTrigger.refresh(true)
     }
-  }
 
-  function detach() {
-    window.clearTimeout(timeout)
-    window.clearTimeout(startupTimeout)
-    clip.removeEventListener('playing', started)
-    clip.removeEventListener('timeupdate', updateProgress)
-    clip.removeEventListener('ended', finish)
-    clip.removeEventListener('error', finish)
-  }
+    function enter() {
+      if (entering) return
+      entering = true
+      clearTimeout(deadline)
+      clearTimeout(cameraGrace)
+      listeners.abort()
+      clip.pause()
+      if (animate && !preference.matches && !document.hidden) handoff = revealHero(curtain, unlock)
+      else unlock()
+    }
 
-  function finish() {
-    if (finished) return
-    finished = true
-    detach()
-    clip.pause()
-    clip.removeAttribute('src')
-    clip.load()
-    delete hero.dataset.opening
-    hero.dispatchEvent(new Event('opening-finished'))
-    progress.style.transform = 'scaleX(1)'
-    handoff.play()
-  }
+    function update() {
+      progress.style.transform = `scaleX(${(total - pending.size) / total})`
+      if (pending.size) return
+      clearTimeout(deadline)
+      message.textContent = '载入完成'
+      if (cameraPlaying && !clip.ended) cameraGrace = window.setTimeout(enter, 900)
+      else enter()
+    }
 
-  clip.addEventListener('timeupdate', updateProgress)
-  clip.addEventListener('playing', started, { once: true })
-  clip.addEventListener('ended', finish)
-  clip.addEventListener('error', finish)
-  clip.poster = clip.dataset.poster
-  clip.src = clip.dataset.src
-  clip.play().catch(finish)
+    function watch(asset, event, ready) {
+      if (!pending.has(asset)) return
+      const settled = () => {
+        if (pending.delete(asset)) update()
+      }
+      asset.addEventListener(event, settled, options)
+      asset.addEventListener('error', settled, options)
+      if (ready()) settled()
+    }
 
-  return () => {
-    finished = true
-    detach()
-    clip.pause()
-    clip.removeAttribute('src')
-    clip.removeAttribute('poster')
-    clip.load()
-    delete hero.dataset.opening
-    hero.dispatchEvent(new Event('opening-finished'))
-    progress.style.removeProperty('transform')
-  }
+    if (animate) {
+      clip.addEventListener('playing', () => { cameraPlaying = true }, options)
+      clip.addEventListener('ended', () => { if (!pending.size) enter() }, options)
+      clip.src = media('intro-camera.mp4')
+      clip.play().catch(() => {})
+    }
+
+    preference.addEventListener('change', () => {
+      if (!preference.matches) return
+      clip.pause()
+      if (pending.delete(heroVideo)) update()
+    }, options)
+
+    // Keep the poster available as a fallback when a first frame takes too long.
+    deadline = window.setTimeout(enter, 6000)
+    watch(poster, 'load', () => poster.complete)
+    watch(heroVideo, 'loadeddata', () => heroVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA || heroVideo.error)
+    if (!entering) update()
+
+    return () => {
+      clearTimeout(deadline)
+      clearTimeout(cameraGrace)
+      listeners.abort()
+      handoff?.kill()
+    }
+  }, [setOpening])
 }
 
 function revealSection(section) {
@@ -138,13 +170,7 @@ function connectSections() {
 export function usePortfolioMotion() {
   useLayoutEffect(() => {
     const preferences = gsap.matchMedia()
-    let opened = false
     preferences.add('(prefers-reduced-motion: no-preference)', () => {
-      let stopOpening
-      if (!opened && window.scrollY < 35 && ['', '#top'].includes(window.location.hash)) {
-        stopOpening = openHero()
-        opened = true
-      }
       document.querySelectorAll('[data-motion-section]').forEach(revealSection)
       revealMetrics()
       connectSections()
@@ -163,7 +189,6 @@ export function usePortfolioMotion() {
       layoutObserver.observe(document.getElementById('screening'))
       experience.addEventListener('toggle', refreshLayout)
       return () => {
-        stopOpening?.()
         experience.removeEventListener('toggle', refreshLayout)
         layoutObserver.disconnect()
         cancelAnimationFrame(refreshFrame)

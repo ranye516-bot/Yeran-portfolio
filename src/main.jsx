@@ -5,8 +5,7 @@ import contact from './contact.json'
 import videoLibrary from './video-library.json'
 import ProfileCard from './ProfileCard'
 import Grainient from './Grainient'
-import { usePortfolioMotion } from './motion'
-import './styles.css'
+import { usePortfolioMotion, useSiteOpening } from './motion'
 
 const DriftWall = lazy(() => import('./DriftWall'))
 
@@ -90,34 +89,22 @@ function Navbar() {
   )
 }
 
-function HeroOpening() {
-  return (
-    <div className="opening-curtain">
-      <p className="opening-name" lang="en" aria-hidden="true">YERAN</p>
-      <div className="opening-stage">
-        <div className="opening-camera" aria-hidden="true">
-          <video className="opening-clip" data-src={media('intro-camera.mp4')} data-poster={media('intro-camera-poster.webp')} muted playsInline preload="none" />
-        </div>
-        <div className="opening-status" role="status">
-          <span className="opening-track" aria-hidden="true"><span className="opening-progress" /></span>
-          <span>正在载入</span>
-        </div>
-      </div>
-    </div>
-  )
+function heroVideoSource() {
+  return media(window.matchMedia('(max-width: 640px)').matches ? 'hero-mobile.mp4' : 'hero.mp4')
 }
 
-function Hero() {
+function Hero({ opening }) {
   const hero = useRef(null)
   const video = useRef(null)
   const [paused, setPaused] = useState(false)
   const [playing, setPlaying] = useState(false)
   const [available, setAvailable] = useState(true)
   const [visible, setVisible] = useState(false)
-  const [opening, setOpening] = useState(false)
-  const [source, setSource] = useState(null)
   const [allowMotion, setAllowMotion] = useState(
     () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  )
+  const [source, setSource] = useState(() =>
+    allowMotion && ['', '#top'].includes(window.location.hash) ? heroVideoSource() : null,
   )
 
   useEffect(() => {
@@ -130,19 +117,13 @@ function Hero() {
   useEffect(() => {
     const section = hero.current
     const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting && entry.intersectionRatio >= 0.15), { threshold: 0.15 })
-    const openingFinished = () => setOpening(false)
-    setOpening(section.dataset.opening === 'true')
-    section.addEventListener('opening-finished', openingFinished)
     observer.observe(section)
-    return () => {
-      observer.disconnect()
-      section.removeEventListener('opening-finished', openingFinished)
-    }
+    return () => observer.disconnect()
   }, [])
 
   useEffect(() => {
     if (!source && visible && !opening && allowMotion && available) {
-      setSource(media(window.matchMedia('(max-width: 640px)').matches ? 'hero-mobile.mp4' : 'hero.mp4'))
+      setSource(heroVideoSource())
     }
   }, [source, visible, opening, allowMotion, available])
 
@@ -172,12 +153,11 @@ function Hero() {
       <div className="hero-media" aria-hidden="true">
         <img src={media('hero-poster.webp')} alt="" fetchPriority="high" />
         {source && allowMotion && available && (
-          <video ref={video} muted playsInline loop preload="none" poster={media('hero-poster.webp')} src={source} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onError={() => setAvailable(false)} />
+          <video ref={video} muted playsInline loop preload={opening ? 'auto' : 'none'} poster={media('hero-poster.webp')} src={source} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onError={() => setAvailable(false)} />
         )}
       </div>
       <div className="hero-shade" aria-hidden="true" />
       <div className="hero-exit-shade" aria-hidden="true" />
-      <HeroOpening />
       <div className="hero-body wrap">
         <div className="hero-masthead">
           <div className="motion-mask"><p className="hero-label" lang="en">PHOTOGRAPHY <span>/</span> VISUAL CREATION</p></div>
@@ -759,19 +739,21 @@ function Contact() {
 }
 
 function App() {
+  const [opening, setOpening] = useState(true)
+  useSiteOpening(setOpening)
   useLayoutEffect(() => {
     const sectionId = window.location.hash.slice(1)
     if (sectionId && window.scrollY === 0) {
       document.getElementById(sectionId)?.scrollIntoView({ behavior: 'instant' })
     }
-  }, [])
+  }, [opening])
   usePortfolioMotion()
   return (
     <>
       <a href="#screening" className="skip-link">跳到样片放映</a>
       <Grainient />
       <Navbar />
-      <main><Hero /><About /><Screening /><Work /><VideoLibrary /></main>
+      <main><Hero opening={opening} /><About /><Screening /><Work /><VideoLibrary /></main>
       <Contact />
     </>
   )
